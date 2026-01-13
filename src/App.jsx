@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./App.css";
 
 const QUESTIONS = [
   {
@@ -68,15 +69,24 @@ export default function App() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [remainingTime, setRemainingTime] = useState(TOTAL_TIME_SECONDS);
+  const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+  const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
+  const [lastAnswerStatus, setLastAnswerStatus] = useState("idle"); // "correct" | "incorrect" | "timeout" | "idle"
 
   useEffect(() => {
-    if (currentPage !== "QUIZ") {
+    if (currentPage !== "QUIZ" || isShowingFeedback) {
       return;
     }
 
     if (remainingTime === 0) {
-      moveToNextQuestion();
-      return;
+      setIsShowingFeedback(true);
+      setLastAnswerStatus("timeout");
+
+      const feedbackTimeout = setTimeout(() => {
+        moveToNextQuestion();
+      }, 800);
+
+      return () => clearTimeout(feedbackTimeout);
     }
 
     const timerId = setTimeout(() => {
@@ -84,25 +94,43 @@ export default function App() {
     }, 1000);
 
     return () => clearTimeout(timerId);
-  }, [remainingTime, currentPage]);
+  }, [remainingTime, currentPage, isShowingFeedback]);
 
   const startQuiz = () => {
     setCurrentPage("QUIZ");
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
     setRemainingTime(TOTAL_TIME_SECONDS);
+    setIsShowingFeedback(false);
+    setLastSelectedIndex(null);
+    setLastAnswerStatus("idle");
   };
 
   const handleOptionSelect = (optionIndex) => {
+    if (isShowingFeedback) return;
+
     setSelectedAnswers((previousAnswers) => ({
       ...previousAnswers,
       [currentQuestionIndex]: optionIndex,
     }));
 
-    moveToNextQuestion();
+    const currentQuestion = QUESTIONS[currentQuestionIndex];
+    const isCorrect = optionIndex === currentQuestion.correctOptionIndex;
+
+    setLastSelectedIndex(optionIndex);
+    setLastAnswerStatus(isCorrect ? "correct" : "incorrect");
+    setIsShowingFeedback(true);
+
+    setTimeout(() => {
+      moveToNextQuestion();
+    }, 700);
   };
 
   const moveToNextQuestion = () => {
+    setIsShowingFeedback(false);
+    setLastSelectedIndex(null);
+    setLastAnswerStatus("idle");
+
     if (currentQuestionIndex < QUESTIONS.length - 1) {
       setCurrentQuestionIndex((previousIndex) => previousIndex + 1);
       setRemainingTime(TOTAL_TIME_SECONDS);
@@ -125,63 +153,126 @@ export default function App() {
 
   if (currentPage === "LANDING") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <h1 className="text-3xl font-bold">Welcome to the Quiz</h1>
-        <button
-          onClick={startQuiz}
-          className="px-6 py-2 rounded-xl bg-black text-white"
-        >
-          Start Quiz
-        </button>
-      </div>
+      <main className="app-shell">
+        <section className="quiz-panel">
+          <header className="quiz-header">
+            <h1 className="quiz-title">Welcome to the Quiz</h1>
+            <p className="quiz-subtitle">
+              Answer {QUESTIONS.length} questions. You have {TOTAL_TIME_SECONDS} seconds per
+              question. Questions will automatically move forward when time is up.
+            </p>
+          </header>
+
+          <div className="quiz-actions">
+            <button type="button" onClick={startQuiz} className="btn btn-primary">
+              Start Quiz
+            </button>
+          </div>
+        </section>
+      </main>
     );
   }
 
   if (currentPage === "QUIZ") {
     const currentQuestion = QUESTIONS[currentQuestionIndex];
+    const totalQuestions = QUESTIONS.length;
+    const timeProgress = (remainingTime / TOTAL_TIME_SECONDS) * 100;
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-4">
-        <h2 className="text-xl font-semibold">
-          Question {currentQuestionIndex + 1} of {QUESTIONS.length}
-        </h2>
+      <main className="app-shell">
+        <section className="quiz-panel" aria-live="polite">
+          <header className="quiz-header">
+            <p className="quiz-progress">
+              Question {currentQuestionIndex + 1} of {totalQuestions}
+            </p>
+            <h2 className="quiz-question">{currentQuestion.question}</h2>
+          </header>
 
-        <p className="text-lg text-center">{currentQuestion.question}</p>
+          <div className="quiz-options" role="list">
+            {currentQuestion.options.map((option, index) => {
+              const isSelected = index === lastSelectedIndex;
 
-        <div className="grid grid-cols-1 gap-3 w-full max-w-md">
-          {currentQuestion.options.map((option, index) => (
-            <button
-              key={index}
-              onClick={() => handleOptionSelect(index)}
-              className="px-4 py-2 border rounded-xl hover:bg-gray-100"
-            >
-              {option}
-            </button>
-          ))}
-        </div>
+              let optionStatusClass = "";
+              if (isSelected && lastAnswerStatus === "correct") {
+                optionStatusClass = "option-correct";
+              } else if (isSelected && lastAnswerStatus === "incorrect") {
+                optionStatusClass = "option-incorrect";
+              }
 
-        <p className="text-sm text-gray-600">
-          Time left: {remainingTime} seconds
-        </p>
-      </div>
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  role="listitem"
+                  onClick={() => handleOptionSelect(index)}
+                  disabled={isShowingFeedback}
+                  className={`quiz-option ${isSelected ? "quiz-option-selected" : ""} ${optionStatusClass}`}
+                  aria-pressed={isSelected}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="quiz-footer">
+            <div className="timer">
+              <div className="timer-label">
+                {lastAnswerStatus === "timeout"
+                  ? "Time's up!"
+                  : `Time left: ${remainingTime} second${remainingTime === 1 ? "" : "s"}`}
+              </div>
+              <div className="timer-bar" aria-hidden="true">
+                <div
+                  className="timer-bar-fill"
+                  style={{ width: `${timeProgress}%` }}
+                />
+              </div>
+            </div>
+
+            <p className="quiz-hint">
+              Tap an answer to continue. Each question has a limited time.
+            </p>
+          </div>
+        </section>
+      </main>
     );
   }
 
   const finalScore = calculateScore();
+  const totalQuestions = QUESTIONS.length;
+  const percentage = Math.round((finalScore / totalQuestions) * 100);
+
+  let resultMessage = "Nice work! Keep practicing to improve your score.";
+  if (percentage === 100) {
+    resultMessage = "Perfect score! Excellent job 🎉";
+  } else if (percentage >= 70) {
+    resultMessage = "Great job! You're doing really well.";
+  } else if (percentage <= 40) {
+    resultMessage = "Don't worry—every attempt helps you learn. Try again!";
+  }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl font-bold">Quiz Completed</h1>
-      <p className="text-lg">
-        Your Score: {finalScore} / {QUESTIONS.length}
-      </p>
+    <main className="app-shell">
+      <section className="quiz-panel">
+        <header className="quiz-header">
+          <h1 className="quiz-title">Quiz Completed</h1>
+          <p className="quiz-result-score">
+            You scored {finalScore} out of {totalQuestions} ({percentage}%)
+          </p>
+          <p className="quiz-result-message">{resultMessage}</p>
+        </header>
 
-      <button
-        onClick={() => setCurrentPage("LANDING")}
-        className="px-6 py-2 rounded-xl bg-black text-white"
-      >
-        Restart Quiz
-      </button>
-    </div>
+        <div className="quiz-actions">
+          <button
+            type="button"
+            onClick={() => setCurrentPage("LANDING")}
+            className="btn btn-primary"
+          >
+            Restart Quiz
+          </button>
+        </div>
+      </section>
+    </main>
   );
 }
