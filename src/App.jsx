@@ -1,3 +1,281 @@
+// import { useEffect, useState } from "react";
+// import "./App.css";
+
+// const QUESTIONS = [
+//   {
+//     id: 1,
+//     question: "What is the capital of India?",
+//     options: ["Mumbai", "Delhi", "Chennai", "Kolkata"],
+//     correctOptionIndex: 1,
+//   },
+//   {
+//     id: 2,
+//     question: "Which language runs in a web browser?",
+//     options: ["Java", "C", "Python", "JavaScript"],
+//     correctOptionIndex: 3,
+//   },
+//   {
+//     id: 3,
+//     question: "What does CSS stand for?",
+//     options: [
+//       "Computer Style Sheets",
+//       "Cascading Style Sheets",
+//       "Creative Style System",
+//       "Colorful Style Sheets",
+//     ],
+//     correctOptionIndex: 1,
+//   },
+//   {
+//     id: 4,
+//     question: "Which company developed React?",
+//     options: ["Google", "Facebook", "Amazon", "Microsoft"],
+//     correctOptionIndex: 1,
+//   },
+//   {
+//     id: 5,
+//     question: "Which HTML tag is used for JavaScript?",
+//     options: ["<js>", "<javascript>", "<script>", "<code>"],
+//     correctOptionIndex: 2,
+//   },
+//   {
+//     id: 6,
+//     question: "Which hook is used for state in React?",
+//     options: ["useEffect", "useState", "useRef", "useMemo"],
+//     correctOptionIndex: 1,
+//   },
+//   {
+//     id: 7,
+//     question: "What is 2 + 2?",
+//     options: ["3", "4", "5", "6"],
+//     correctOptionIndex: 1,
+//   },
+//   {
+//     id: 8,
+//     question: "Which command creates a React app?",
+//     options: [
+//       "npm create-react-app",
+//       "npm start",
+//       "npm install react",
+//       "npm build react",
+//     ],
+//     correctOptionIndex: 0,
+//   },
+// ];
+
+// const TOTAL_TIME_SECONDS = 5;
+
+// export default function App() {
+//   const [currentPage, setCurrentPage] = useState("LANDING");
+//   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+//   const [selectedAnswers, setSelectedAnswers] = useState({});
+//   const [remainingTime, setRemainingTime] = useState(TOTAL_TIME_SECONDS);
+//   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+//   const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
+//   const [lastAnswerStatus, setLastAnswerStatus] = useState("idle"); // "correct" | "incorrect" | "timeout" | "idle"
+
+//   useEffect(() => {
+//     if (currentPage !== "QUIZ" || isShowingFeedback) {
+//       return;
+//     }
+
+//     if (remainingTime === 0) {
+//       setIsShowingFeedback(true);
+//       setLastAnswerStatus("timeout");
+
+//       const feedbackTimeout = setTimeout(() => {
+//         moveToNextQuestion();
+//       }, 800);
+
+//       return () => clearTimeout(feedbackTimeout);
+//     }
+
+//     const timerId = setTimeout(() => {
+//       setRemainingTime((previousTime) => previousTime - 1);
+//     }, 1000);
+
+//     return () => clearTimeout(timerId);
+//   }, [remainingTime, currentPage, isShowingFeedback]);
+
+//   const startQuiz = () => {
+//     setCurrentPage("QUIZ");
+//     setCurrentQuestionIndex(0);
+//     setSelectedAnswers({});
+//     setRemainingTime(TOTAL_TIME_SECONDS);
+//     setIsShowingFeedback(false);
+//     setLastSelectedIndex(null);
+//     setLastAnswerStatus("idle");
+//   };
+
+//   const handleOptionSelect = (optionIndex) => {
+//     if (isShowingFeedback) return;
+
+//     setSelectedAnswers((previousAnswers) => ({
+//       ...previousAnswers,
+//       [currentQuestionIndex]: optionIndex,
+//     }));
+
+//     const currentQuestion = QUESTIONS[currentQuestionIndex];
+//     const isCorrect = optionIndex === currentQuestion.correctOptionIndex;
+
+//     setLastSelectedIndex(optionIndex);
+//     setLastAnswerStatus(isCorrect ? "correct" : "incorrect");
+//     setIsShowingFeedback(true);
+
+//     setTimeout(() => {
+//       moveToNextQuestion();
+//     }, 700);
+//   };
+
+//   const moveToNextQuestion = () => {
+//     setIsShowingFeedback(false);
+//     setLastSelectedIndex(null);
+//     setLastAnswerStatus("idle");
+
+//     if (currentQuestionIndex < QUESTIONS.length - 1) {
+//       setCurrentQuestionIndex((previousIndex) => previousIndex + 1);
+//       setRemainingTime(TOTAL_TIME_SECONDS);
+//     } else {
+//       setCurrentPage("RESULT");
+//     }
+//   };
+
+//   const calculateScore = () => {
+//     let score = 0;
+
+//     QUESTIONS.forEach((question, index) => {
+//       if (selectedAnswers[index] === question.correctOptionIndex) {
+//         score += 1;
+//       }
+//     });
+
+//     return score;
+//   };
+
+//   if (currentPage === "LANDING") {
+//     return (
+//       <main className="app-shell">
+//         <section className="quiz-panel">
+//           <header className="quiz-header">
+//             <h1 className="quiz-title">Welcome to the Quiz</h1>
+//             <p className="quiz-subtitle">
+//               Answer {QUESTIONS.length} questions. You have {TOTAL_TIME_SECONDS} seconds per
+//               question. Questions will automatically move forward when time is up.
+//             </p>
+//           </header>
+
+//           <div className="quiz-actions">
+//             <button type="button" onClick={startQuiz} className="btn btn-primary">
+//               Start Quiz
+//             </button>
+//           </div>
+//         </section>
+//       </main>
+//     );
+//   }
+
+//   if (currentPage === "QUIZ") {
+//     const currentQuestion = QUESTIONS[currentQuestionIndex];
+//     const totalQuestions = QUESTIONS.length;
+//     const timeProgress = (remainingTime / TOTAL_TIME_SECONDS) * 100;
+
+//     return (
+//       <main className="app-shell">
+//         <section className="quiz-panel" aria-live="polite">
+//           <header className="quiz-header">
+//             <p className="quiz-progress">
+//               Question {currentQuestionIndex + 1} of {totalQuestions}
+//             </p>
+//             <h2 className="quiz-question">{currentQuestion.question}</h2>
+//           </header>
+
+//           <div className="quiz-options" role="list">
+//             {currentQuestion.options.map((option, index) => {
+//               const isSelected = index === lastSelectedIndex;
+
+//               let optionStatusClass = "";
+//               if (isSelected && lastAnswerStatus === "correct") {
+//                 optionStatusClass = "option-correct";
+//               } else if (isSelected && lastAnswerStatus === "incorrect") {
+//                 optionStatusClass = "option-incorrect";
+//               }
+
+//               return (
+//                 <button
+//                   key={index}
+//                   type="button"
+//                   role="listitem"
+//                   onClick={() => handleOptionSelect(index)}
+//                   disabled={isShowingFeedback}
+//                   className={`quiz-option ${isSelected ? "quiz-option-selected" : ""} ${optionStatusClass}`}
+//                   aria-pressed={isSelected}
+//                 >
+//                   {option}
+//                 </button>
+//               );
+//             })}
+//           </div>
+
+//           <div className="quiz-footer">
+//             <div className="timer">
+//               <div className="timer-label">
+//                 {lastAnswerStatus === "timeout"
+//                   ? "Time's up!"
+//                   : `Time left: ${remainingTime} second${remainingTime === 1 ? "" : "s"}`}
+//               </div>
+//               <div className="timer-bar" aria-hidden="true">
+//                 <div
+//                   className="timer-bar-fill"
+//                   style={{ width: `${timeProgress}%` }}
+//                 />
+//               </div>
+//             </div>
+
+//             <p className="quiz-hint">
+//               Tap an answer to continue. Each question has a limited time.
+//             </p>
+//           </div>
+//         </section>
+//       </main>
+//     );
+//   }
+
+//   const finalScore = calculateScore();
+//   const totalQuestions = QUESTIONS.length;
+//   const percentage = Math.round((finalScore / totalQuestions) * 100);
+
+//   let resultMessage = "Nice work! Keep practicing to improve your score.";
+//   if (percentage === 100) {
+//     resultMessage = "Perfect score! Excellent job 🎉";
+//   } else if (percentage >= 70) {
+//     resultMessage = "Great job! You're doing really well.";
+//   } else if (percentage <= 40) {
+//     resultMessage = "Don't worry—every attempt helps you learn. Try again!";
+//   }
+
+//   return (
+//     <main className="app-shell">
+//       <section className="quiz-panel">
+//         <header className="quiz-header">
+//           <h1 className="quiz-title">Quiz Completed</h1>
+//           <p className="quiz-result-score">
+//             You scored {finalScore} out of {totalQuestions} ({percentage}%)
+//           </p>
+//           <p className="quiz-result-message">{resultMessage}</p>
+//         </header>
+
+//         <div className="quiz-actions">
+//           <button
+//             type="button"
+//             onClick={() => setCurrentPage("LANDING")}
+//             className="btn btn-primary"
+//           >
+//             Restart Quiz
+//           </button>
+//         </div>
+//       </section>
+//     </main>
+//   );
+// }
 import { useEffect, useState } from "react";
 import "./App.css";
 
@@ -71,31 +349,37 @@ export default function App() {
   const [remainingTime, setRemainingTime] = useState(TOTAL_TIME_SECONDS);
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
   const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
-  const [lastAnswerStatus, setLastAnswerStatus] = useState("idle"); // "correct" | "incorrect" | "timeout" | "idle"
+  const [lastAnswerStatus, setLastAnswerStatus] = useState("idle"); 
+  // "correct" | "incorrect" | "timeout" | "idle"
 
+  /* ---------------- TIMER LOGIC ---------------- */
   useEffect(() => {
-    if (currentPage !== "QUIZ" || isShowingFeedback) {
-      return;
-    }
-
+    if (currentPage !== "QUIZ") return;
+  
+    // TIMEOUT CASE
     if (remainingTime === 0) {
       setIsShowingFeedback(true);
       setLastAnswerStatus("timeout");
-
-      const feedbackTimeout = setTimeout(() => {
+  
+      const timeoutId = setTimeout(() => {
         moveToNextQuestion();
       }, 800);
-
-      return () => clearTimeout(feedbackTimeout);
+  
+      return () => clearTimeout(timeoutId);
     }
-
+  
+    // STOP TIMER WHILE SHOWING FEEDBACK
+    if (isShowingFeedback) return;
+  
     const timerId = setTimeout(() => {
-      setRemainingTime((previousTime) => previousTime - 1);
+      setRemainingTime((prevTime) => prevTime - 1);
     }, 1000);
-
+  
     return () => clearTimeout(timerId);
   }, [remainingTime, currentPage, isShowingFeedback]);
+  
 
+  /* ---------------- HANDLERS ---------------- */
   const startQuiz = () => {
     setCurrentPage("QUIZ");
     setCurrentQuestionIndex(0);
@@ -109,8 +393,8 @@ export default function App() {
   const handleOptionSelect = (optionIndex) => {
     if (isShowingFeedback) return;
 
-    setSelectedAnswers((previousAnswers) => ({
-      ...previousAnswers,
+    setSelectedAnswers((prev) => ({
+      ...prev,
       [currentQuestionIndex]: optionIndex,
     }));
 
@@ -132,7 +416,7 @@ export default function App() {
     setLastAnswerStatus("idle");
 
     if (currentQuestionIndex < QUESTIONS.length - 1) {
-      setCurrentQuestionIndex((previousIndex) => previousIndex + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
       setRemainingTime(TOTAL_TIME_SECONDS);
     } else {
       setCurrentPage("RESULT");
@@ -141,137 +425,98 @@ export default function App() {
 
   const calculateScore = () => {
     let score = 0;
-
-    QUESTIONS.forEach((question, index) => {
-      if (selectedAnswers[index] === question.correctOptionIndex) {
-        score += 1;
+    QUESTIONS.forEach((q, index) => {
+      if (selectedAnswers[index] === q.correctOptionIndex) {
+        score++;
       }
     });
-
     return score;
   };
 
+  /* ---------------- LANDING PAGE ---------------- */
   if (currentPage === "LANDING") {
     return (
       <main className="app-shell">
         <section className="quiz-panel">
-          <header className="quiz-header">
-            <h1 className="quiz-title">Welcome to the Quiz</h1>
-            <p className="quiz-subtitle">
-              Answer {QUESTIONS.length} questions. You have {TOTAL_TIME_SECONDS} seconds per
-              question. Questions will automatically move forward when time is up.
-            </p>
-          </header>
-
-          <div className="quiz-actions">
-            <button type="button" onClick={startQuiz} className="btn btn-primary">
-              Start Quiz
-            </button>
-          </div>
+          <h1>Welcome to the Quiz</h1>
+          <p>
+            {QUESTIONS.length} questions · {TOTAL_TIME_SECONDS} seconds each
+          </p>
+          <button onClick={startQuiz}>Start Quiz</button>
         </section>
       </main>
     );
   }
 
+  /* ---------------- QUIZ PAGE ---------------- */
   if (currentPage === "QUIZ") {
     const currentQuestion = QUESTIONS[currentQuestionIndex];
-    const totalQuestions = QUESTIONS.length;
-    const timeProgress = (remainingTime / TOTAL_TIME_SECONDS) * 100;
+    const progress = (remainingTime / TOTAL_TIME_SECONDS) * 100;
 
     return (
       <main className="app-shell">
-        <section className="quiz-panel" aria-live="polite">
-          <header className="quiz-header">
-            <p className="quiz-progress">
-              Question {currentQuestionIndex + 1} of {totalQuestions}
+        <section className="quiz-panel">
+          <p>
+            Question {currentQuestionIndex + 1} / {QUESTIONS.length}
+          </p>
+
+          <h2>{currentQuestion.question}</h2>
+
+          {currentQuestion.options.map((option, index) => {
+            const isSelected = index === lastSelectedIndex;
+
+            let className = "quiz-option";
+            if (isSelected && lastAnswerStatus === "correct") {
+              className += " correct";
+            }
+            if (isSelected && lastAnswerStatus === "incorrect") {
+              className += " incorrect";
+            }
+
+            return (
+              <button
+                key={index}
+                className={className}
+                disabled={isShowingFeedback}
+                onClick={() => handleOptionSelect(index)}
+              >
+                {option}
+              </button>
+            );
+          })}
+
+          <div className="timer">
+            <p>
+              {lastAnswerStatus === "timeout"
+                ? "Time's up!"
+                : `Time left: ${remainingTime}s`}
             </p>
-            <h2 className="quiz-question">{currentQuestion.question}</h2>
-          </header>
-
-          <div className="quiz-options" role="list">
-            {currentQuestion.options.map((option, index) => {
-              const isSelected = index === lastSelectedIndex;
-
-              let optionStatusClass = "";
-              if (isSelected && lastAnswerStatus === "correct") {
-                optionStatusClass = "option-correct";
-              } else if (isSelected && lastAnswerStatus === "incorrect") {
-                optionStatusClass = "option-incorrect";
-              }
-
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  role="listitem"
-                  onClick={() => handleOptionSelect(index)}
-                  disabled={isShowingFeedback}
-                  className={`quiz-option ${isSelected ? "quiz-option-selected" : ""} ${optionStatusClass}`}
-                  aria-pressed={isSelected}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="quiz-footer">
-            <div className="timer">
-              <div className="timer-label">
-                {lastAnswerStatus === "timeout"
-                  ? "Time's up!"
-                  : `Time left: ${remainingTime} second${remainingTime === 1 ? "" : "s"}`}
-              </div>
-              <div className="timer-bar" aria-hidden="true">
-                <div
-                  className="timer-bar-fill"
-                  style={{ width: `${timeProgress}%` }}
-                />
-              </div>
+            <div className="timer-bar">
+              <div
+                className="timer-bar-fill"
+                style={{ width: `${progress}%` }}
+              />
             </div>
-
-            <p className="quiz-hint">
-              Tap an answer to continue. Each question has a limited time.
-            </p>
           </div>
         </section>
       </main>
     );
   }
 
-  const finalScore = calculateScore();
-  const totalQuestions = QUESTIONS.length;
-  const percentage = Math.round((finalScore / totalQuestions) * 100);
-
-  let resultMessage = "Nice work! Keep practicing to improve your score.";
-  if (percentage === 100) {
-    resultMessage = "Perfect score! Excellent job 🎉";
-  } else if (percentage >= 70) {
-    resultMessage = "Great job! You're doing really well.";
-  } else if (percentage <= 40) {
-    resultMessage = "Don't worry—every attempt helps you learn. Try again!";
-  }
+  /* ---------------- RESULT PAGE ---------------- */
+  const score = calculateScore();
+  const percentage = Math.round((score / QUESTIONS.length) * 100);
 
   return (
     <main className="app-shell">
       <section className="quiz-panel">
-        <header className="quiz-header">
-          <h1 className="quiz-title">Quiz Completed</h1>
-          <p className="quiz-result-score">
-            You scored {finalScore} out of {totalQuestions} ({percentage}%)
-          </p>
-          <p className="quiz-result-message">{resultMessage}</p>
-        </header>
-
-        <div className="quiz-actions">
-          <button
-            type="button"
-            onClick={() => setCurrentPage("LANDING")}
-            className="btn btn-primary"
-          >
-            Restart Quiz
-          </button>
-        </div>
+        <h1>Quiz Completed 🎉</h1>
+        <p>
+          Score: {score} / {QUESTIONS.length} ({percentage}%)
+        </p>
+        <button onClick={() => setCurrentPage("LANDING")}>
+          Restart Quiz
+        </button>
       </section>
     </main>
   );
